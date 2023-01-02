@@ -14,26 +14,23 @@
 const byte address[][6] = {"00001","00002"};
 
 RF24 radio(7, 8); // CE, CSN
-//RF24 radio(11, 12, 13); //MO, MI, SCK
 
+// data = X value, Y value, Height, 0
 int data [4] = {0, 0, 0, 0};
 int item [4] = {2, 2, 2, 2};
 
 int VRx = A0;
 int VRy = A1;
-
 int xPosition = 0;
 int yPosition = 0;
-//int SW_state = 0;
 int mapX = 0;
 int mapY = 0;
 
-int CLK = 6; // pin6 for clk
-int DT = 5; // pin5 for DT
-int rot_position = 0;
-int rotation;
-int value;
-boolean LeftRight;
+// Height
+int zPosition = 0;
+
+// potentiometer read
+int pot = A3;
 
 void setup() {
   Serial.begin(9600);
@@ -44,9 +41,7 @@ void setup() {
 
   pinMode(VRx, INPUT);
   pinMode(VRy, INPUT);
-  pinMode(CLK, INPUT);
-  pinMode(DT, INPUT);
-  rotation = digitalRead(CLK);
+  pinMode(pot, INPUT);
 }
 
 void loop() {
@@ -57,18 +52,19 @@ void send() {
   delay(5);
   radio.stopListening();
   joystick();
-  encoder();
-  data[0] = rot_position;
-  data[1] = mapX;
-  data[2] = mapY;
+  potentiometer();
+  data[0] = mapX;
+  data[1] = mapY;
+  data[2] = zPosition;
   radio.write(&data, sizeof(data));
 
-  for (int i=0;i<4;i++){
-    Serial.print("[");
-    Serial.print(data[i]);
-    Serial.print("] ");
-  }
-  Serial.println();
+// Testing
+//  for (int i=0;i<4;i++){
+//    Serial.print("[");
+//    Serial.print(data[i]);
+//    Serial.print("] ");
+//  }
+//  Serial.println();
 
   getting();
 }
@@ -78,6 +74,7 @@ void getting() {
   radio.startListening();
   radio.read(&item, sizeof(item));
 
+// Testing code
 //  for (int i=0;i<4;i++){
 //   Serial.print(item[i]);
 //  }
@@ -91,6 +88,7 @@ void joystick() {
   mapX = map(xPosition, -512, 512, -512, 512);
   mapY = map(yPosition, -512, 512, -512, 512);
 
+// Testing code
 //  Serial.print("X: ");
 //  Serial.print(mapX);
 //  Serial.print(" | Y: ");
@@ -98,21 +96,6 @@ void joystick() {
 //  Serial.println();
 }
 
-void encoder() {
-  value = digitalRead(CLK);
-
-  if ( value != rotation){
-    if ( digitalRead(DT) != value){
-      rot_position++;
-      delay(5);
-    }
-    else{
-      rot_position--;
-      if (rot_position < 0){
-        rot_position = 0;
-      }
-      delay(5);
-    }
-  }
-  rotation = value;
+void potentiometer() {
+  zPosition = analogRead(pot);
 }
